@@ -1,0 +1,22 @@
+This XML file does not appear to have any style information associated with it. The document tree is shown below.
+<package format="2">
+<name>arm6dof_pick_place</name>
+<version>0.0.1</version>
+<description>Plain RViz visualization of a 6DOF robotic arm (no MoveIt, no Gazebo)</description>
+<maintainer email="you@example.com">Kedar</maintainer>
+<license>MIT</license>
+<buildtool_depend>catkin</buildtool_depend>
+<build_depend>xacro</build_depend>
+<build_depend>urdf</build_depend>
+<exec_depend>xacro</exec_depend>
+<exec_depend>urdf</exec_depend>
+<exec_depend>robot_state_publisher</exec_depend>
+<exec_depend>joint_state_publisher</exec_depend>
+<exec_depend>joint_state_publisher_gui</exec_depend>
+<exec_depend>rospy</exec_depend>
+<exec_depend>sensor_msgs</exec_depend>
+<exec_depend>rviz</exec_depend>
+<exec_depend>interactive_markers</exec_depend>
+<exec_depend>visualization_msgs</exec_depend>
+<export> </export>
+</package>
