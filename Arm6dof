@@ -1,0 +1,215 @@
+<?xml version="1.0"?>
+<robot name="arm6dof" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:property name="base_height"   value="0.05"/>
+  <xacro:property name="link1_length"  value="0.05"/>
+  <xacro:property name="link2_length"  value="0.10"/>
+  <xacro:property name="link3_length"  value="0.10"/>
+  <xacro:property name="link4_length"  value="0.03"/>
+  <xacro:property name="link5_length"  value="0.03"/>
+  <xacro:property name="link6_length"  value="0.02"/>
+  <xacro:property name="link_radius"   value="0.015"/>
+  <xacro:property name="link_mass"     value="0.15"/>
+
+  <!-- "grey" = Cyber Teal, "orange" = Electric Violet (bright, uncommon colours) -->
+  <material name="grey">  <color rgba="0.0 0.85 0.75 1"/></material>
+  <material name="orange"><color rgba="0.58 0.0 0.83 1"/></material>
+  <material name="dark_joint"><color rgba="0.25 0.25 0.28 1"/></material>
+
+  <link name="world"/>
+  <joint name="world_to_base" type="fixed">
+    <parent link="world"/>
+    <child link="base_link"/>
+  </joint>
+
+  <xacro:macro name="inertial_box" params="mass x y z">
+    <inertial>
+      <mass value="${mass}"/>
+      <inertia
+        ixx="${mass*(y*y+z*z)/12}" ixy="0" ixz="0"
+        iyy="${mass*(x*x+z*z)/12}" iyz="0"
+        izz="${mass*(x*x+y*y)/12}"/>
+    </inertial>
+  </xacro:macro>
+
+  <xacro:macro name="arm_link" params="name length radius mass color">
+    <link name="${name}">
+      <visual>
+        <origin xyz="0 0 ${length/2}" rpy="0 0 0"/>
+        <geometry><cylinder radius="${radius}" length="${length}"/></geometry>
+        <material name="${color}"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 ${length/2}" rpy="0 0 0"/>
+        <geometry><cylinder radius="${radius}" length="${length}"/></geometry>
+      </collision>
+      <xacro:inertial_box mass="${mass}" x="${radius*2}" y="${radius*2}" z="${length}"/>
+    </link>
+  </xacro:macro>
+
+  <!-- Revolute joint + a dark sphere at the pivot to hide the cylinder seam -->
+  <xacro:macro name="arm_joint" params="name parent child axis xyz limit_lower limit_upper sphere_radius">
+    <joint name="${name}" type="revolute">
+      <parent link="${parent}"/>
+      <child link="${child}"/>
+      <origin xyz="${xyz}" rpy="0 0 0"/>
+      <axis xyz="${axis}"/>
+      <limit lower="${limit_lower}" upper="${limit_upper}" effort="10" velocity="2.0"/>
+      <dynamics damping="0.2" friction="0.1"/>
+    </joint>
+    <transmission name="${name}_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${name}">
+        <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${name}_motor">
+        <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+
+    <link name="${name}_sphere">
+      <visual>
+        <geometry><sphere radius="${sphere_radius}"/></geometry>
+        <material name="dark_joint"/>
+      </visual>
+    </link>
+    <joint name="${name}_sphere_fixed" type="fixed">
+      <parent link="${child}"/>
+      <child link="${name}_sphere"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+  </xacro:macro>
+
+  <!-- ============ Base ============ -->
+  <link name="base_link">
+    <visual>
+      <geometry><cylinder radius="0.06" length="${base_height}"/></geometry>
+      <origin xyz="0 0 ${base_height/2}" rpy="0 0 0"/>
+      <material name="grey"/>
+    </visual>
+    <collision>
+      <geometry><cylinder radius="0.06" length="${base_height}"/></geometry>
+      <origin xyz="0 0 ${base_height/2}" rpy="0 0 0"/>
+    </collision>
+    <xacro:inertial_box mass="0.5" x="0.12" y="0.12" z="${base_height}"/>
+  </link>
+
+  <!-- ============ Arm: joints 1-6 ============ -->
+  <xacro:arm_link name="link1" length="${link1_length}" radius="${link_radius}" mass="${link_mass}" color="orange"/>
+  <xacro:arm_joint name="joint1" parent="base_link" child="link1"
+                    axis="0 0 1" xyz="0 0 ${base_height}" limit_lower="-3.14" limit_upper="3.14"
+                    sphere_radius="0.022"/>
+
+  <xacro:arm_link name="link2" length="${link2_length}" radius="${link_radius}" mass="${link_mass}" color="grey"/>
+  <xacro:arm_joint name="joint2" parent="link1" child="link2"
+                    axis="0 1 0" xyz="0 0 ${link1_length}" limit_lower="-1.57" limit_upper="1.57"
+                    sphere_radius="0.020"/>
+
+  <xacro:arm_link name="link3" length="${link3_length}" radius="${link_radius}" mass="${link_mass}" color="orange"/>
+  <xacro:arm_joint name="joint3" parent="link2" child="link3"
+                    axis="0 1 0" xyz="0 0 ${link2_length}" limit_lower="-2.2" limit_upper="2.2"
+                    sphere_radius="0.020"/>
+
+  <xacro:arm_link name="link4" length="${link4_length}" radius="${link_radius*0.8}" mass="${link_mass*0.5}" color="grey"/>
+  <xacro:arm_joint name="joint4" parent="link3" child="link4"
+                    axis="0 0 1" xyz="0 0 ${link3_length}" limit_lower="-3.14" limit_upper="3.14"
+                    sphere_radius="0.017"/>
+
+  <xacro:arm_link name="link5" length="${link5_length}" radius="${link_radius*0.8}" mass="${link_mass*0.5}" color="orange"/>
+  <xacro:arm_joint name="joint5" parent="link4" child="link5"
+                    axis="0 1 0" xyz="0 0 ${link4_length}" limit_lower="-1.57" limit_upper="1.57"
+                    sphere_radius="0.017"/>
+
+  <xacro:arm_link name="link6" length="${link6_length}" radius="${link_radius*0.8}" mass="${link_mass*0.3}" color="grey"/>
+  <xacro:arm_joint name="joint6" parent="link5" child="link6"
+                    axis="0 0 1" xyz="0 0 ${link5_length}" limit_lower="-3.14" limit_upper="3.14"
+                    sphere_radius="0.017"/>
+
+  <!-- ============ Tool frame ============ -->
+  <link name="tool0"/>
+  <joint name="link6_to_tool0" type="fixed">
+    <parent link="link6"/>
+    <child link="tool0"/>
+    <origin xyz="0 0 ${link6_length}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ============ Parallel gripper ============ -->
+  <link name="gripper_base">
+    <visual><geometry><box size="0.04 0.04 0.02"/></geometry><material name="grey"/></visual>
+    <collision><geometry><box size="0.04 0.04 0.02"/></geometry></collision>
+    <xacro:inertial_box mass="0.05" x="0.04" y="0.04" z="0.02"/>
+  </link>
+  <joint name="tool0_to_gripper" type="fixed">
+    <parent link="tool0"/>
+    <child link="gripper_base"/>
+  </joint>
+
+  <link name="left_finger">
+    <visual><geometry><box size="0.01 0.01 0.04"/></geometry><material name="orange"/></visual>
+    <collision><geometry><box size="0.01 0.01 0.04"/></geometry></collision>
+    <xacro:inertial_box mass="0.01" x="0.01" y="0.01" z="0.04"/>
+  </link>
+  <joint name="left_finger_joint" type="prismatic">
+    <parent link="gripper_base"/>
+    <child link="left_finger"/>
+    <origin xyz="0 0.02 0.02" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="0.0" upper="0.02" effort="5" velocity="0.5"/>
+  </joint>
+  <transmission name="left_finger_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="left_finger_joint">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="left_finger_motor">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+  <link name="right_finger">
+    <visual><geometry><box size="0.01 0.01 0.04"/></geometry><material name="orange"/></visual>
+    <collision><geometry><box size="0.01 0.01 0.04"/></geometry></collision>
+    <xacro:inertial_box mass="0.01" x="0.01" y="0.01" z="0.04"/>
+  </link>
+  <joint name="right_finger_joint" type="prismatic">
+    <parent link="gripper_base"/>
+    <child link="right_finger"/>
+    <origin xyz="0 -0.02 0.02" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-0.02" upper="0.0" effort="5" velocity="0.5"/>
+  </joint>
+  <transmission name="right_finger_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="right_finger_joint">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="right_finger_motor">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+  <gazebo>
+    <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+      <robotNamespace>/arm6dof</robotNamespace>
+    </plugin>
+  </gazebo>
+
+  <!-- ============ Scene: place pad (the pick cube is a draggable
+       interactive marker, see scripts/cube_marker.py) ============ -->
+  <material name="pad_white"><color rgba="0.9 0.9 0.95 1"/></material>
+  <link name="place_pad">
+    <visual>
+      <geometry><box size="0.05 0.05 0.005"/></geometry>
+      <material name="pad_white"/>
+    </visual>
+  </link>
+  <joint name="world_to_pad" type="fixed">
+    <parent link="world"/>
+    <child link="place_pad"/>
+    <origin xyz="0.1486 -0.1016 0.0025" rpy="0 0 0"/>
+  </joint>
+
+</robot>
