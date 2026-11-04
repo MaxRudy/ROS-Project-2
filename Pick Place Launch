@@ -1,0 +1,17 @@
+<launch>
+  <arg name="model" default="$(find arm6dof_pick_place)/urdf/arm6dof.xacro"/>
+  <arg name="rate"  default="30.0"/>
+
+  <param name="robot_description" command="$(find xacro)/xacro $(arg model)"/>
+
+  <node name="pick_place_demo" pkg="arm6dof_pick_place" type="pick_place.py" output="screen">
+    <param name="rate" value="$(arg rate)"/>
+  </node>
+
+  <node name="robot_state_publisher"
+        pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+  <node name="rviz" pkg="rviz" type="rviz"
+        args="-d $(find arm6dof_pick_place)/rviz/arm.rviz"
+        required="true"/>
+</launch>
