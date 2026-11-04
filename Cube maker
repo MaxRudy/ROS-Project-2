@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+"""
+Publishes a draggable interactive marker representing the pick object.
+
+Click the gold cube in RViz to reveal drag arrows, then drag it anywhere
+in 3D - including into the gripper - to simulate positioning the object
+by hand while you drive the arm with the joint_state_publisher_gui sliders.
+"""
+
+import rospy
+from interactive_markers.interactive_marker_server import InteractiveMarkerServer
+from visualization_msgs.msg import InteractiveMarker, InteractiveMarkerControl, Marker
+from geometry_msgs.msg import Point
+
+
+def normalize(q):
+    n = (q.x**2 + q.y**2 + q.z**2 + q.w**2) ** 0.5
+    if n > 0:
+        q.x /= n; q.y /= n; q.z /= n; q.w /= n
+
+
+def make_cube_marker():
+    int_marker = InteractiveMarker()
+    int_marker.header.frame_id = "world"
+    int_marker.name = "pick_cube"
+    int_marker.description = "Drag me"
+    int_marker.pose.position = Point(0.1486, 0.1016, 0.015)
+    int_marker.scale = 0.06
+
+    # The visible gold cube itself
+    box = Marker()
+    box.type = Marker.CUBE
+    box.scale.x = box.scale.y = box.scale.z = 0.03
+    box.color.r, box.color.g, box.color.b, box.color.a = 1.0, 0.85, 0.0, 1.0
+
+    box_control = InteractiveMarkerControl()
+    box_control.always_visible = True
+    box_control.markers.append(box)
+    int_marker.controls.append(box_control)
+
+    # Drag handle along X
+    c = InteractiveMarkerControl()
+    c.orientation.w, c.orientation.x, c.orientation.y, c.orientation.z = 1.0, 1.0, 0.0, 0.0
+    normalize(c.orientation)
+    c.name = "move_x"
+    c.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
+    int_marker.controls.append(c)
+
+    # Drag handle along Z (vertical lift)
+    c = InteractiveMarkerControl()
+    c.orientation.w, c.orientation.x, c.orientation.y, c.orientation.z = 1.0, 0.0, 1.0, 0.0
+    normalize(c.orientation)
+    c.name = "move_z"
+    c.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
+    int_marker.controls.append(c)
+
+    # Drag handle along Y
+    c = InteractiveMarkerControl()
+    c.orientation.w, c.orientation.x, c.orientation.y, c.orientation.z = 1.0, 0.0, 0.0, 1.0
+    normalize(c.orientation)
+    c.name = "move_y"
+    c.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
+    int_marker.controls.append(c)
+
+    return int_marker
+
+
+def feedback_cb(feedback):
+    # No extra logic needed - the server auto-updates the marker's
+    # rendered position in RViz as you drag it.
+    pass
+
+
+if __name__ == '__main__':
+    rospy.init_node('cube_marker')
+    server = InteractiveMarkerServer("cube_control")
+    server.insert(make_cube_marker(), feedback_cb)
+    server.applyChanges()
+    rospy.loginfo("cube_marker ready - click the gold cube in RViz to drag it")
+    rospy.spin()
