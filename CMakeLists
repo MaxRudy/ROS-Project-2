@@ -1,0 +1,31 @@
+cmake_minimum_required(VERSION 3.0.2)
+project(arm6dof_pick_place)
+
+find_package(catkin REQUIRED COMPONENTS
+  rospy
+  sensor_msgs
+  urdf
+  xacro
+)
+
+catkin_package()
+
+catkin_install_python(PROGRAMS
+  scripts/arm_mover.py
+  scripts/pick_place.py
+  scripts/cube_marker.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY launch/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+)
+install(DIRECTORY urdf/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/urdf
+)
+install(DIRECTORY config/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config
+)
+install(DIRECTORY rviz/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/rviz
+)
