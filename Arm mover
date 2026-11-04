@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+"""
+Joint animation node for arm6dof (plain RViz demo, no MoveIt).
+
+Publishes sensor_msgs/JointState on /joint_states at a fixed rate.
+robot_state_publisher consumes these and broadcasts the TF tree,
+which RViz uses to draw the arm in motion.
+"""
+
+import math
+import rospy
+from sensor_msgs.msg import JointState
+
+
+JOINT_NAMES = ['joint1', 'joint2', 'joint3', 'joint4', 'joint5', 'joint6',
+               'left_finger_joint', 'right_finger_joint']
+
+# (amplitude [rad or m], frequency [Hz], phase [rad], offset)
+DEFAULT_MOTION = [
+    (1.20, 0.10, 0.0,          0.0),   # joint1 - waist yaw
+    (0.60, 0.15, math.pi/4,    0.2),   # joint2 - shoulder pitch
+    (0.80, 0.20, math.pi/2,   -0.4),   # joint3 - elbow pitch
+    (1.50, 0.25, 0.0,          0.0),   # joint4 - wrist roll
+    (0.60, 0.30, math.pi/3,    0.0),   # joint5 - wrist pitch
+    (1.80, 0.35, 0.0,          0.0),   # joint6 - wrist yaw
+    (0.010, 0.20, 0.0,         0.010), # left_finger  - open/close 0..0.02
+    (0.010, 0.20, math.pi,    -0.010), # right_finger - mirrors left
+]
+
+
+class ArmMover(object):
+    def __init__(self):
+        rospy.init_node('arm_mover')
+        self.rate_hz = rospy.get_param('~rate', 30.0)
+        self.enabled = rospy.get_param('~animate', True)
+        self.pub = rospy.Publisher('/joint_states', JointState, queue_size=1)
+        self.start_time = rospy.Time.now()
+        rospy.loginfo("arm_mover started - animating %d joints at %.0f Hz",
+                      len(JOINT_NAMES), self.rate_hz)
+
+    def compute_positions(self, t):
+        positions = []
+        for amp, freq, phase, offset in DEFAULT_MOTION:
+            positions.append(offset + amp * math.sin(2.0 * math.pi * freq * t + phase))
+        return positions
+
+    def spin(self):
+        rate = rospy.Rate(self.rate_hz)
+        while not rospy.is_shutdown():
+            now = rospy.Time.now()
+            t = (now - self.start_time).to_sec()
+            msg = JointState()
+            msg.header.stamp = now
+            msg.name = JOINT_NAMES
+            msg.position = (self.compute_positions(t) if self.enabled
+                            else [0.0] * len(JOINT_NAMES))
+            self.pub.publish(msg)
+            rate.sleep()
+
+
+if __name__ == '__main__':
+    try:
+        ArmMover().spin()
+    except rospy.ROSInterruptException:
+        pass
