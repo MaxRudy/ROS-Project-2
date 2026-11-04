@@ -1,0 +1,53 @@
+Panels:
+  - Class: rviz/Displays
+    Name: Displays
+    Tree Height: 600
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz/Grid
+      Name: Grid
+      Enabled: true
+      Cell Size: 0.1
+      Plane Cell Count: 20
+      Color: 100; 100; 100
+      Value: true
+    - Class: rviz/RobotModel
+      Name: RobotModel
+      Enabled: true
+      Robot Description: robot_description
+      Value: true
+    - Class: rviz/TF
+      Name: TF
+      Enabled: true
+      Marker Scale: 0.08
+      Show Names: true
+      Show Axes: true
+      Show Arrows: false
+      Value: true
+    - Class: rviz/InteractiveMarkers
+      Name: CubeMarker
+      Enabled: true
+      Update Topic: /cube_control/update
+      Value: true
+  Global Options:
+    Background Color: 48; 48; 48
+    Fixed Frame: world
+    Frame Rate: 30
+  Tools:
+    - Class: rviz/Interact
+    - Class: rviz/MoveCamera
+    - Class: rviz/Select
+  Value: true
+  Views:
+    Current:
+      Class: rviz/Orbit
+      Distance: 0.8
+      Yaw: 0.9
+      Pitch: 0.4
+      Focal Point: {X: 0, Y: 0, Z: 0.15}
+      Target Frame: <Fixed Frame>
+      Near Clip Distance: 0.01
+Window Geometry:
+  Height: 850
+  Width: 1300
